@@ -1,0 +1,13 @@
+{
+  "name": "personal-finance-tracker",
+  "version": "1.0.0",
+  "description": "Full Stack Personal Finance Tracker",
+  "scripts": {
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm start\"",
+    "build": "cd frontend && npm run build",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
