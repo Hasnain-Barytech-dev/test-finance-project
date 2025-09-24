@@ -29,40 +29,58 @@ class Transaction {
     
     if (type) {
       paramCount++;
-      query += ` AND t.type = ${paramCount}`;
+      query += ` AND t.type = $${paramCount}`;
       params.push(type);
     }
     
     if (categoryId) {
       paramCount++;
-      query += ` AND t.category_id = ${paramCount}`;
+      query += ` AND t.category_id = $${paramCount}`;
       params.push(categoryId);
     }
     
     if (startDate) {
       paramCount++;
-      query += ` AND t.date >= ${paramCount}`;
+      query += ` AND t.date >= $${paramCount}`;
       params.push(startDate);
     }
     
     if (endDate) {
       paramCount++;
-      query += ` AND t.date <= ${paramCount}`;
+      query += ` AND t.date <= $${paramCount}`;
       params.push(endDate);
     }
     
-    query += ` ORDER BY t.date DESC, t.created_at DESC LIMIT ${++paramCount} OFFSET ${++paramCount}`;
+    query += ` ORDER BY t.date DESC, t.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`;
     params.push(limit, offset);
     
     const result = await db.query(query, params);
     
-    const countQuery = `SELECT COUNT(*) FROM transactions WHERE user_id = $1` + 
-      (type ? ` AND type = '${type}'` : '') +
-      (categoryId ? ` AND category_id = '${categoryId}'` : '') +
-      (startDate ? ` AND date >= '${startDate}'` : '') +
-      (endDate ? ` AND date <= '${endDate}'` : '');
+    let countQuery = 'SELECT COUNT(*) FROM transactions WHERE user_id = $1';
+    const countParams = [userId];
+    let countParamCount = 1;
     
-    const countResult = await db.query(countQuery, [userId]);
+    if (type) {
+      countQuery += ` AND type = $${++countParamCount}`;
+      countParams.push(type);
+    }
+    
+    if (categoryId) {
+      countQuery += ` AND category_id = $${++countParamCount}`;
+      countParams.push(categoryId);
+    }
+    
+    if (startDate) {
+      countQuery += ` AND date >= $${++countParamCount}`;
+      countParams.push(startDate);
+    }
+    
+    if (endDate) {
+      countQuery += ` AND date <= $${++countParamCount}`;
+      countParams.push(endDate);
+    }
+    
+    const countResult = await db.query(countQuery, countParams);
     
     return {
       transactions: result.rows,

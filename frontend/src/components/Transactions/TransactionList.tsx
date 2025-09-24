@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import apiService from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Select,
   SelectContent,
@@ -27,7 +29,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   Search, 
-  Filter, 
   Plus, 
   MoreHorizontal, 
   Edit, 
@@ -37,55 +38,75 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface Transaction {
-  id: string;
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-  type: 'income' | 'expense';
-}
-
-// Demo data - In real app, this would come from your backend API
-const mockTransactions: Transaction[] = [
-  { id: '1', amount: -50.00, category: 'Food', description: 'Groceries at Whole Foods', date: '2024-01-15', type: 'expense' },
-  { id: '2', amount: -30.00, category: 'Transport', description: 'Gas station', date: '2024-01-14', type: 'expense' },
-  { id: '3', amount: 2500.00, category: 'Salary', description: 'Monthly salary deposit', date: '2024-01-01', type: 'income' },
-  { id: '4', amount: -100.00, category: 'Entertainment', description: 'Movie tickets', date: '2024-01-10', type: 'expense' },
-  { id: '5', amount: -200.00, category: 'Shopping', description: 'Clothing store', date: '2024-01-12', type: 'expense' },
-  { id: '6', amount: -75.50, category: 'Food', description: 'Restaurant dinner', date: '2024-01-13', type: 'expense' },
-  { id: '7', amount: 500.00, category: 'Freelance', description: 'Client project payment', date: '2024-01-08', type: 'income' },
-  { id: '8', amount: -25.00, category: 'Transport', description: 'Uber ride', date: '2024-01-11', type: 'expense' },
-];
-
-const categories = ['All', 'Food', 'Transport', 'Entertainment', 'Shopping', 'Salary', 'Freelance', 'Bills', 'Healthcare'];
-
 const TransactionList: React.FC = () => {
   const { hasPermission } = useAuth();
+  const { toast } = useToast();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [transactionsData, categoriesData] = await Promise.all([
+        apiService.getTransactions({ limit: 100 }),
+        apiService.getCategories()
+      ]);
+      
+      setTransactions(transactionsData.transactions || []);
+      setCategories(categoriesData.categories || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load transactions",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredTransactions = useMemo(() => {
-    return mockTransactions.filter(transaction => {
-      const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || transaction.category === selectedCategory;
+    return transactions.filter(transaction => {
+      const matchesSearch = (transaction.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (transaction.category_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'All' || transaction.category_id === selectedCategory;
       const matchesType = selectedType === 'All' || transaction.type === selectedType;
       
       return matchesSearch && matchesCategory && matchesType;
     });
-  }, [searchTerm, selectedCategory, selectedType]);
+  }, [transactions, searchTerm, selectedCategory, selectedType]);
 
-  const handleEdit = (id: string) => {
-    console.log('Edit transaction:', id);
-    // In real app, navigate to edit form
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) {
+      return;
+    }
+
+    try {
+      await apiService.deleteTransaction(id);
+      toast({
+        title: "Success",
+        description: "Transaction deleted successfully",
+      });
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    console.log('Delete transaction:', id);
-    // In real app, call delete API
-  };
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Loading transactions...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -135,9 +156,10 @@ const TransactionList: React.FC = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="All">All Categories</SelectItem>
                   {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -185,79 +207,75 @@ const TransactionList: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  {hasPermission('write') && <TableHead className="w-[70px]">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">
-                      {new Date(transaction.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{transaction.description}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{transaction.category}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1">
-                        {transaction.type === 'income' ? (
-                          <TrendingUp className="h-4 w-4 text-success" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-destructive" />
-                        )}
-                        <span className="capitalize">{transaction.type}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={transaction.type === 'income' ? 'finance-amount-positive' : 'finance-amount-negative'}>
-                        {transaction.type === 'income' ? '+' : '-'}${Math.abs(transaction.amount).toLocaleString()}
-                      </span>
-                    </TableCell>
-                    {hasPermission('write') && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(transaction.id)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(transaction.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {filteredTransactions.length === 0 && (
+          {filteredTransactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="text-muted-foreground">No transactions found</div>
               <p className="text-sm text-muted-foreground mt-1">
-                Try adjusting your search criteria or add a new transaction.
+                {transactions.length === 0 ? 'Add your first transaction to get started!' : 'Try adjusting your search criteria.'}
               </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    {hasPermission('write') && <TableHead className="w-[70px]">Actions</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">
+                        {new Date(transaction.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>{transaction.description || 'No description'}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{transaction.category_name || 'Uncategorized'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          {transaction.type === 'income' ? (
+                            <TrendingUp className="h-4 w-4 text-success" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 text-destructive" />
+                          )}
+                          <span className="capitalize">{transaction.type}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={transaction.type === 'income' ? 'finance-amount-positive' : 'finance-amount-negative'}>
+                          {transaction.type === 'income' ? '+' : '-'}${parseFloat(transaction.amount).toLocaleString()}
+                        </span>
+                      </TableCell>
+                      {hasPermission('write') && (
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(transaction.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiService from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,33 +17,33 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, DollarSign, Calendar, Tag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const categories = [
-  'Food',
-  'Transport', 
-  'Entertainment',
-  'Shopping',
-  'Bills',
-  'Healthcare',
-  'Education',
-  'Travel',
-  'Salary',
-  'Freelance',
-  'Investment',
-  'Other'
-];
 
 const NewTransaction: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
     amount: '',
-    category: '',
+    categoryId: '',
     description: '',
-    date: new Date().toISOString().split('T')[0], // Today's date
+    date: new Date().toISOString().split('T')[0],
   });
+
+  useEffect(() => {
+    fetchCategories();
+  }, [formData.type]);
+
+  const fetchCategories = async () => {
+    try {
+      const data: any = await apiService.getCategories(formData.type);
+      setCategories(data.categories || []);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
 
   const handleChange = (field: keyof typeof formData) => (value: string) => {
     setFormData(prev => ({
@@ -56,11 +57,10 @@ const NewTransaction: React.FC = () => {
     setLoading(true);
 
     try {
-      // In real app, this would be an API call to your backend
-      console.log('Creating transaction:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await apiService.createTransaction({
+        ...formData,
+        amount: parseFloat(formData.amount),
+      });
       
       toast({
         title: "Transaction created!",
@@ -180,7 +180,7 @@ const NewTransaction: React.FC = () => {
             {/* Category */}
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.category} onValueChange={handleChange('category')}>
+              <Select value={formData.categoryId} onValueChange={handleChange('categoryId')}>
                 <SelectTrigger>
                   <div className="flex items-center">
                     <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -189,8 +189,8 @@ const NewTransaction: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

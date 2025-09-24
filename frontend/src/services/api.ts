@@ -81,9 +81,15 @@ class ApiService {
     return this.request<VerifyResponse>('/auth/verify');
   }
 
-  // Transaction endpoints (ready for your backend)
-  async getTransactions() {
-    return this.request('/transactions');
+  // Transaction endpoints
+  async getTransactions(params?: any) {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/transactions${queryString}`);
+  }
+
+  async getCategories(type?: 'income' | 'expense') {
+    const queryString = type ? `?type=${type}` : '';
+    return this.request(`/transactions/categories${queryString}`);
   }
 
   async createTransaction(transaction: any) {
@@ -106,14 +112,32 @@ class ApiService {
     });
   }
 
-  // Analytics endpoints (ready for your backend)
-  async getAnalytics() {
-    return this.request('/analytics');
+  // Analytics endpoints
+  async getOverview(params?: any) {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/analytics/overview${queryString}`);
   }
 
-  // User management endpoints (ready for your backend)
+  async getCategoryBreakdown(params?: any) {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/analytics/categories${queryString}`);
+  }
+
+  async getTrends(params?: any) {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.request(`/analytics/trends${queryString}`);
+  }
+
+  // User management endpoints
   async getUsers() {
     return this.request('/users');
+  }
+
+  async updateUserRole(id: string, role: string) {
+    return this.request(`/users/${id}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
   }
 }
 

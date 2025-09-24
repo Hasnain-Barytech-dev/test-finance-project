@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug - Finance Tracker</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Finance Tracker Debug</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test 1: Check LocalStorage
+        const token = localStorage.getItem('finance_token');
+        results.innerHTML += `<div class="test ${token ? 'success' : 'error'}">
+            <strong>Token in localStorage:</strong> ${token ? 'Found' : 'Not found'}
+            ${token ? `<br><small>${token.substring(0, 50)}...</small>` : ''}
+        </div>`;
+        
+        // Test 2: Check API
+        fetch('http://localhost:5000/api/test')
+            .then(r => r.json())
+            .then(data => {
+                results.innerHTML += `<div class="test success">
+                    <strong>Backend API:</strong> Working ✓
+                    <br><small>${JSON.stringify(data)}</small>
+                </div>`;
+            })
+            .catch(err => {
+                results.innerHTML += `<div class="test error">
+                    <strong>Backend API:</strong> Error ✗
+                    <br><small>${err.message}</small>
+                </div>`;
+            });
+        
+        // Test 3: Test Login
+        results.innerHTML += `
+            <div class="test">
+                <h3>Test Login</h3>
+                <button onclick="testLogin()">Login as Admin</button>
+                <div id="login-result"></div>
+            </div>
+        `;
+        
+        window.testLogin = function() {
+            fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'admin@demo.com', password: 'admin123' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                localStorage.setItem('finance_token', data.token);
+                document.getElementById('login-result').innerHTML = 
+                    `<div style="color: green; margin-top: 10px;">✓ Login successful!<br>
+                    Token saved. Now go to <a href="/">main app</a></div>`;
+            })
+            .catch(err => {
+                document.getElementById('login-result').innerHTML = 
+                    `<div style="color: red; margin-top: 10px;">✗ Error: ${err.message}</div>`;
+            });
+        };
+    </script>
+</body>
+</html>

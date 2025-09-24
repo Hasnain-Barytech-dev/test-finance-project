@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "@/components/Layout/MainLayout";
 
@@ -15,6 +16,9 @@ const Register = lazy(() => import("@/pages/Register"));
 const TransactionList = lazy(() => import("@/components/Transactions/TransactionList"));
 const NewTransaction = lazy(() => import("@/pages/NewTransaction"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
+const Users = lazy(() => import("@/pages/Users"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Reports = lazy(() => import("@/pages/Reports"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -26,20 +30,32 @@ const LoadingFallback = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+const App = () => {
+  console.log('🚀 App component rendering');
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
               {/* Protected routes with layout */}
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="/dashboard" element={
                 <ProtectedRoute>
                   <MainLayout>
@@ -72,23 +88,40 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Default redirect */}
-              <Route path="/" element={
+              <Route path="/reports" element={
                 <ProtectedRoute>
                   <MainLayout>
-                    <Dashboard />
+                    <Reports />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/users" element={
+                <ProtectedRoute requiredPermission="admin">
+                  <MainLayout>
+                    <Users />
+                  </MainLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Settings />
                   </MainLayout>
                 </ProtectedRoute>
               } />
               
               {/* Catch all other routes */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+              </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

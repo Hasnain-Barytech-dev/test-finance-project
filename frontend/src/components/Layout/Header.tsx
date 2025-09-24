@@ -44,7 +44,7 @@ const Header: React.FC = () => {
           {user && (
             <div className="flex items-center space-x-3">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium">{user.name}</div>
+                <div className="text-sm font-medium">{user.name || user.email}</div>
                 <div className={`text-xs px-2 py-1 rounded-full ${getRoleColor(user.role)}`}>
                   {user.role}
                 </div>
@@ -55,7 +55,7 @@ const Header: React.FC = () => {
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -63,7 +63,7 @@ const Header: React.FC = () => {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">{user.name || user.email}</p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
                       </p>

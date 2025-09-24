@@ -13,7 +13,7 @@ const validateTransaction = [
 const getTransactions = async (req, res) => {
   try {
     const { page = 1, limit = 10, type, categoryId, startDate, endDate } = req.query;
-    const userId = req.user.role === 'admin' ? req.query.userId : req.user.id;
+    const userId = req.user.role === 'admin' && req.query.userId ? req.query.userId : req.user.id;
     
     const options = {
       page: parseInt(page),

@@ -124,6 +124,8 @@ const getTrends = async (req, res) => {
     const year = endDate.getFullYear();
     const monthlyData = await Transaction.getMonthlyTotals(userId, year);
 
+    console.log('getTrends - monthlyData from DB:', monthlyData);
+
     const trends = {
       labels: [],
       income: [],
@@ -140,8 +142,10 @@ const getTrends = async (req, res) => {
       
       trends.labels.push(monthName);
       
-      const incomeData = monthlyData.find(d => d.month === month && d.type === 'income');
-      const expenseData = monthlyData.find(d => d.month === month && d.type === 'expense');
+      const incomeData = monthlyData.find(d => Number(d.month) === month && d.type === 'income');
+      const expenseData = monthlyData.find(d => Number(d.month) === month && d.type === 'expense');
+      
+      console.log(`Month ${month} (${monthName}):`, { incomeData, expenseData });
       
       const income = incomeData ? parseFloat(incomeData.total) : 0;
       const expenses = expenseData ? parseFloat(expenseData.total) : 0;
