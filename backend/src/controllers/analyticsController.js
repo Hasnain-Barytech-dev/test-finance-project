@@ -25,12 +25,13 @@ const getOverview = async (req, res) => {
 
     monthlyData.forEach(row => {
       const monthIndex = row.month - 1;
-      const amount = parseFloat(row.total);
+      const amount = Math.abs(parseFloat(row.total));
+      const type = String(row.type).toLowerCase();
       
-      if (row.type === 'income') {
+      if (type === 'income') {
         overview.monthlyIncome[monthIndex] = amount;
         overview.totalIncome += amount;
-      } else {
+      } else if (type === 'expense') {
         overview.monthlyExpenses[monthIndex] = amount;
         overview.totalExpenses += amount;
       }
@@ -73,15 +74,16 @@ const getCategoryBreakdown = async (req, res) => {
     categoryData.forEach(row => {
       const categoryInfo = {
         name: row.name,
-        amount: parseFloat(row.total),
+        amount: Math.abs(parseFloat(row.total)),
         count: parseInt(row.count),
         percentage: 0
       };
+      const type = String(row.type).toLowerCase();
 
-      if (row.type === 'income') {
+      if (type === 'income') {
         breakdown.income.push(categoryInfo);
         breakdown.totalIncome += categoryInfo.amount;
-      } else {
+      } else if (type === 'expense') {
         breakdown.expenses.push(categoryInfo);
         breakdown.totalExpenses += categoryInfo.amount;
       }
@@ -142,13 +144,13 @@ const getTrends = async (req, res) => {
       
       trends.labels.push(monthName);
       
-      const incomeData = monthlyData.find(d => Number(d.month) === month && d.type === 'income');
-      const expenseData = monthlyData.find(d => Number(d.month) === month && d.type === 'expense');
+      const incomeData = monthlyData.find(d => Number(d.month) === month && String(d.type).toLowerCase() === 'income');
+      const expenseData = monthlyData.find(d => Number(d.month) === month && String(d.type).toLowerCase() === 'expense');
       
       console.log(`Month ${month} (${monthName}):`, { incomeData, expenseData });
       
-      const income = incomeData ? parseFloat(incomeData.total) : 0;
-      const expenses = expenseData ? parseFloat(expenseData.total) : 0;
+      const income = incomeData ? Math.abs(parseFloat(incomeData.total)) : 0;
+      const expenses = expenseData ? Math.abs(parseFloat(expenseData.total)) : 0;
       
       trends.income.push(income);
       trends.expenses.push(expenses);

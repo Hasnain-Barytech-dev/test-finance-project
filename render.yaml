@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: finance-tracker-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: finance-tracker-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: finance-tracker-redis
+          property: connectionString
+
+  - type: web
+    name: finance-tracker-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://finance-tracker-backend.onrender.com/api
+
+  - type: redis
+    name: finance-tracker-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+databases:
+  - name: finance-tracker-db
+    databaseName: finance_tracker
+    plan: free
+    region: oregon

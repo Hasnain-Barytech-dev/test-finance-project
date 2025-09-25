@@ -145,9 +145,9 @@ class Transaction {
   static async getMonthlyTotals(userId, year) {
     const result = await db.query(`
       SELECT 
-        EXTRACT(MONTH FROM date) as month,
-        type,
-        SUM(amount) as total
+        EXTRACT(MONTH FROM date)::INTEGER as month,
+        type::TEXT,
+        SUM(amount)::NUMERIC as total
       FROM transactions 
       WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2
       GROUP BY EXTRACT(MONTH FROM date), type
@@ -161,13 +161,13 @@ class Transaction {
     const result = await db.query(`
       SELECT 
         c.name,
-        c.type,
+        t.type::TEXT,
         SUM(t.amount) as total,
         COUNT(t.id) as count
       FROM transactions t
       JOIN categories c ON t.category_id = c.id
       WHERE t.user_id = $1 AND t.date BETWEEN $2 AND $3
-      GROUP BY c.id, c.name, c.type
+      GROUP BY c.id, c.name, t.type
       ORDER BY total DESC
     `, [userId, startDate, endDate]);
     

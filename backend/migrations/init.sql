@@ -53,6 +53,6 @@ INSERT INTO categories (name, type) VALUES
 ('Other Income', 'income');
 
 INSERT INTO users (email, password, name, role) VALUES
-('admin@demo.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Admin User', 'admin'),
-('user@demo.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Regular User', 'user'),
-('readonly@demo.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Read Only User', 'read-only');
+('admin@demo.com', '$2a$10$EreRWUaf.IlKUaAwnHfnzeMVHmYN8CcMzAxP5vuPkd2zxbHOB4icK', 'Admin User', 'admin'),
+('user@demo.com', '$2a$10$PFCu/3n8T1uqS/jOhnuwT.s3QMHBY31Y9uPv5SMIOl/JDd.Vtsytu', 'Regular User', 'user'),
+('readonly@demo.com', '$2a$10$rMUDCeFrnkyHP/vMD4NHVuWWa/EryIPfNr2K7THQ9XCk49Qhl8EC2', 'Read Only User', 'read-only');
